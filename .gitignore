@@ -1,0 +1,5 @@
+# Server data dirs, sockets, logs and generated CSVs
+.data
+# Benchmark runs
+results
+result

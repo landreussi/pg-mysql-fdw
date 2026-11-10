@@ -1,0 +1,69 @@
+Limit  (cost=7007.72..7007.76 rows=15 width=60) (actual time=73.081..73.084 rows=15.00 loops=1)
+  Output: p.id, p.name, (count(DISTINCT o.id)), (sum(((oi.quantity)::numeric * oi.unit_price)))
+  Buffers: shared hit=126092
+  ->  Sort  (cost=7007.72..7008.97 rows=500 width=60) (actual time=73.080..73.083 rows=15.00 loops=1)
+        Output: p.id, p.name, (count(DISTINCT o.id)), (sum(((oi.quantity)::numeric * oi.unit_price)))
+        Sort Key: (sum(((oi.quantity)::numeric * oi.unit_price))) DESC, p.id
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=126092
+        ->  GroupAggregate  (cost=6975.82..6995.45 rows=500 width=60) (actual time=67.308..72.977 rows=500.00 loops=1)
+              Output: p.id, p.name, count(DISTINCT o.id), sum(((oi.quantity)::numeric * oi.unit_price))
+              Group Key: p.id
+              Buffers: shared hit=126092
+              ->  Sort  (cost=6975.82..6978.05 rows=892 width=33) (actual time=67.052..68.006 rows=20692.00 loops=1)
+                    Output: p.id, p.name, o.id, oi.quantity, oi.unit_price
+                    Sort Key: p.id, o.id
+                    Sort Method: quicksort  Memory: 1910kB
+                    Buffers: shared hit=126092
+                    ->  Hash Join  (cost=2721.23..6932.11 rows=892 width=33) (actual time=3.640..56.978 rows=20692.00 loops=1)
+                          Output: p.id, p.name, o.id, oi.quantity, oi.unit_price
+                          Inner Unique: true
+                          Hash Cond: (b.publisher_id = p.id)
+                          Buffers: shared hit=126092
+                          ->  Nested Loop  (cost=2705.98..6914.50 rows=892 width=17) (actual time=3.546..53.162 rows=20692.00 loops=1)
+                                Output: o.id, oi.quantity, oi.unit_price, b.publisher_id
+                                Inner Unique: true
+                                Buffers: shared hit=126088
+                                ->  Nested Loop  (cost=2705.68..6636.64 rows=892 width=17) (actual time=3.544..27.259 rows=20692.00 loops=1)
+                                      Output: o.id, oi.quantity, oi.unit_price, oi.book_id
+                                      Buffers: shared hit=64012
+                                      ->  Hash Join  (cost=2705.26..6236.63 rows=357 width=8) (actual time=3.539..12.379 rows=8304.00 loops=1)
+                                            Output: s.order_id, o.id
+                                            Inner Unique: true
+                                            Hash Cond: (o.id = s.order_id)
+                                            Buffers: shared hit=30658
+                                            ->  Index Scan using orders_ordered_at_idx on native.orders o  (cost=0.42..3472.10 rows=22742 width=4) (actual time=0.008..6.512 rows=22513.00 loops=1)
+                                                  Output: o.id, o.customer_id, o.status, o.ordered_at, o.total_amount, o.shipping_country
+                                                  Index Cond: (o.ordered_at >= '2026-08-15 00:00:00'::timestamp without time zone)
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=22570
+                                            ->  Hash  (cost=2606.83..2606.83 rows=7840 width=4) (actual time=3.015..3.015 rows=8304.00 loops=1)
+                                                  Output: s.order_id
+                                                  Buckets: 16384 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 420kB
+                                                  Buffers: shared hit=8088
+                                                  ->  Index Scan using shipments_status_delivered_at_idx on native.shipments s  (cost=0.42..2606.83 rows=7840 width=4) (actual time=0.012..2.110 rows=8304.00 loops=1)
+                                                        Output: s.order_id
+                                                        Index Cond: (((s.status)::text = 'delivered'::text) AND (s.delivered_at >= '2026-09-01 00:00:00'::timestamp without time zone) AND (s.delivered_at < '2026-10-01 00:00:00'::timestamp without time zone))
+                                                        Index Searches: 1
+                                                        Buffers: shared hit=8088
+                                      ->  Index Scan using order_items_order_id_line_no_key on native.order_items oi  (cost=0.43..1.09 rows=3 width=17) (actual time=0.001..0.001 rows=2.49 loops=8304)
+                                            Output: oi.id, oi.order_id, oi.line_no, oi.book_id, oi.quantity, oi.unit_price
+                                            Index Cond: (oi.order_id = o.id)
+                                            Index Searches: 8304
+                                            Buffers: shared hit=33354
+                                ->  Index Scan using books_pkey on native.books b  (cost=0.29..0.31 rows=1 width=8) (actual time=0.001..0.001 rows=1.00 loops=20692)
+                                      Output: b.id, b.isbn, b.title, b.publisher_id, b.genre, b.language, b.published_on, b.pages, b.price, b.created_at
+                                      Index Cond: (b.id = oi.book_id)
+                                      Index Searches: 20692
+                                      Buffers: shared hit=62076
+                          ->  Hash  (cost=9.00..9.00 rows=500 width=20) (actual time=0.092..0.092 rows=500.00 loops=1)
+                                Output: p.id, p.name
+                                Buckets: 1024  Batches: 1  Memory Usage: 34kB
+                                Buffers: shared hit=4
+                                ->  Seq Scan on native.publishers p  (cost=0.00..9.00 rows=500 width=20) (actual time=0.005..0.041 rows=500.00 loops=1)
+                                      Output: p.id, p.name
+                                      Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=74
+Planning Time: 1.015 ms
+Execution Time: 73.260 ms

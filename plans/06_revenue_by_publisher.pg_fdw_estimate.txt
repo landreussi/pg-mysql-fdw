@@ -1,0 +1,66 @@
+Limit  (cost=38281205318.67..38281205318.70 rows=15 width=462) (actual time=5132.287..5132.291 rows=15.00 loops=1)
+  Output: p.id, p.name, (count(DISTINCT o.id)), (sum(((oi.quantity)::numeric * oi.unit_price)))
+  Buffers: shared hit=6882
+  ->  Sort  (cost=38281205318.67..38281205319.17 rows=200 width=462) (actual time=5132.286..5132.289 rows=15.00 loops=1)
+        Output: p.id, p.name, (count(DISTINCT o.id)), (sum(((oi.quantity)::numeric * oi.unit_price)))
+        Sort Key: (sum(((oi.quantity)::numeric * oi.unit_price))) DESC, p.id
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=6882
+        ->  GroupAggregate  (cost=6396198487.27..38281205313.76 rows=200 width=462) (actual time=5109.855..5132.162 rows=500.00 loops=1)
+              Output: p.id, p.name, count(DISTINCT o.id), sum(((oi.quantity)::numeric * oi.unit_price))
+              Group Key: p.id, p.name
+              Buffers: shared hit=6882
+              ->  Incremental Sort  (cost=6396198487.27..37163961936.57 rows=74482891646 width=460) (actual time=5109.115..5126.470 rows=20692.00 loops=1)
+                    Output: p.id, p.name, o.id, oi.quantity, oi.unit_price
+                    Sort Key: p.id, p.name, o.id
+                    Presorted Key: p.id
+                    Full-sort Groups: 339  Sort Method: quicksort  Average Memory: 29kB  Peak Memory: 29kB
+                    Pre-sorted Groups: 75  Sort Method: quicksort  Average Memory: 83kB  Peak Memory: 83kB
+                    Buffers: shared hit=6882
+                    ->  Merge Join  (cost=6246265184.25..7437843284.40 rows=74482891646 width=460) (actual time=5108.064..5114.609 rows=20692.00 loops=1)
+                          Output: p.id, p.name, o.id, oi.quantity, oi.unit_price
+                          Merge Cond: (p.id = b.publisher_id)
+                          Buffers: shared hit=6882
+                          ->  Foreign Scan on legacy_estimate.publishers p  (cost=10.00..511.00 rows=501 width=422) (actual time=0.401..0.994 rows=500.00 loops=1)
+                                Output: p.id, p.name, p.country, p.founded_year, p.created_at
+                                Local server startup cost: 10
+                                Remote query: SELECT `id`, `name` FROM `bookstore`.`publishers` ORDER BY `id` IS NULL, `id` ASC
+                          ->  Materialize  (cost=6246265174.25..6394933620.65 rows=29733689280 width=42) (actual time=5107.660..5110.805 rows=20692.00 loops=1)
+                                Output: o.id, oi.quantity, oi.unit_price, b.publisher_id
+                                Storage: Memory  Maximum Storage: 60kB
+                                Buffers: shared hit=6882
+                                ->  Sort  (cost=6246265174.25..6320599397.45 rows=29733689280 width=42) (actual time=5107.658..5108.770 rows=20692.00 loops=1)
+                                      Output: o.id, oi.quantity, oi.unit_price, b.publisher_id
+                                      Sort Key: b.publisher_id
+                                      Sort Method: quicksort  Memory: 1577kB
+                                      Buffers: shared hit=6882
+                                      ->  Merge Join  (cost=25.42..2426705.01 rows=29733689280 width=42) (actual time=5038.731..5102.405 rows=20692.00 loops=1)
+                                            Output: o.id, oi.quantity, oi.unit_price, b.publisher_id
+                                            Merge Cond: (o.id = s.order_id)
+                                            Buffers: shared hit=6882
+                                            ->  Foreign Scan on legacy_estimate.orders o  (cost=10.00..565573.00 rows=565563 width=4) (actual time=89.133..465.581 rows=490324.00 loops=1)
+                                                  Output: o.id, o.customer_id, o.status, o.ordered_at, o.total_amount, o.shipping_country
+                                                  Local server startup cost: 10
+                                                  Remote query: SELECT `id` FROM `bookstore`.`orders` ORDER BY `id` IS NULL, `id` ASC
+                                            ->  Materialize  (cost=15.42..1701578.01 rows=10514818 width=46) (actual time=4552.470..4600.667 rows=20692.00 loops=1)
+                                                  Output: s.order_id, oi.quantity, oi.unit_price, oi.order_id, b.publisher_id
+                                                  Storage: Memory  Maximum Storage: 17kB
+                                                  Buffers: shared hit=6882
+                                                  ->  Merge Join  (cost=15.42..1675290.96 rows=10514818 width=46) (actual time=4552.465..4596.361 rows=20692.00 loops=1)
+                                                        Output: s.order_id, oi.quantity, oi.unit_price, oi.order_id, b.publisher_id
+                                                        Inner Unique: true
+                                                        Merge Cond: (oi.order_id = s.order_id)
+                                                        Buffers: shared hit=6882
+                                                        ->  Foreign Scan  (cost=15.00..35.00 rows=620874694 width=42) (actual time=3061.089..4436.339 rows=1225591.00 loops=1)
+                                                              Output: oi.quantity, oi.unit_price, oi.order_id, b.publisher_id
+                                                              Relations: (bookstore.order_items oi) INNER JOIN (bookstore.books b)
+                                                              Local server startup cost: 10
+                                                              Remote query: SELECT r4.`quantity`, r4.`unit_price`, r4.`order_id`, r6.`publisher_id` FROM (`bookstore`.`order_items` r4 INNER JOIN `bookstore`.`books` r6 ON (((r4.`book_id` = r6.`id`)))) ORDER BY r4.`order_id` IS NULL, r4.`order_id` ASC
+                                                        ->  Index Scan using shipments_order_id_key on app.shipments s  (cost=0.42..17903.00 rows=8191 width=4) (actual time=55.165..59.229 rows=8304.00 loops=1)
+                                                              Output: s.id, s.order_id, s.carrier, s.tracking_number, s.status, s.shipped_at, s.delivered_at
+                                                              Filter: ((s.delivered_at >= '2026-09-01 00:00:00'::timestamp without time zone) AND (s.delivered_at < '2026-10-01 00:00:00'::timestamp without time zone) AND ((s.status)::text = 'delivered'::text))
+                                                              Rows Removed by Filter: 475366
+                                                              Index Searches: 1
+                                                              Buffers: shared hit=6882
+Planning Time: 4.793 ms
+Execution Time: 5133.091 ms

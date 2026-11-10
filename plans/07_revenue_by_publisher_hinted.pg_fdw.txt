@@ -1,0 +1,52 @@
+Limit  (cost=3066.92..3066.95 rows=15 width=462) (actual time=402.869..402.874 rows=15.00 loops=1)
+  Output: p.id, p.name, (count(DISTINCT o.id)), (sum(((oi.quantity)::numeric * oi.unit_price)))
+  Buffers: shared hit=8088
+  ->  Sort  (cost=3066.92..3067.42 rows=200 width=462) (actual time=402.868..402.871 rows=15.00 loops=1)
+        Output: p.id, p.name, (count(DISTINCT o.id)), (sum(((oi.quantity)::numeric * oi.unit_price)))
+        Sort Key: (sum(((oi.quantity)::numeric * oi.unit_price))) DESC, p.id
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=8088
+        ->  GroupAggregate  (cost=3022.32..3062.01 rows=200 width=462) (actual time=396.453..402.760 rows=500.00 loops=1)
+              Output: p.id, p.name, count(DISTINCT o.id), sum(((oi.quantity)::numeric * oi.unit_price))
+              Group Key: p.id, p.name
+              Buffers: shared hit=8088
+              ->  Sort  (cost=3022.32..3027.63 rows=2125 width=460) (actual time=396.153..397.090 rows=20692.00 loops=1)
+                    Output: p.id, p.name, o.id, oi.quantity, oi.unit_price
+                    Sort Key: p.id, p.name, o.id
+                    Sort Method: quicksort  Memory: 1910kB
+                    Buffers: shared hit=8088
+                    ->  Merge Join  (cost=2840.51..2904.88 rows=2125 width=460) (actual time=276.405..384.043 rows=20692.00 loops=1)
+                          Output: p.id, p.name, o.id, oi.quantity, oi.unit_price
+                          Merge Cond: (b.id = oi.book_id)
+                          Buffers: shared hit=8088
+                          ->  Foreign Scan  (cost=15.00..35.00 rows=5000 width=426) (actual time=69.116..164.425 rows=99994.00 loops=1)
+                                Output: b.id, p.id, p.name
+                                Relations: (bookstore.books b) INNER JOIN (bookstore.publishers p)
+                                Local server startup cost: 10
+                                Remote query: SELECT r6.`id`, r8.`id`, r8.`name` FROM (`bookstore`.`books` r6 INNER JOIN `bookstore`.`publishers` r8 ON (((r6.`publisher_id` = r8.`id`)))) ORDER BY r6.`id` IS NULL, r6.`id` ASC
+                          ->  Sort  (cost=2825.51..2825.72 rows=85 width=42) (actual time=207.283..208.673 rows=20692.00 loops=1)
+                                Output: o.id, oi.quantity, oi.unit_price, oi.book_id
+                                Sort Key: oi.book_id
+                                Sort Method: quicksort  Memory: 1577kB
+                                Buffers: shared hit=8088
+                                ->  Hash Join  (cost=2789.66..2822.78 rows=85 width=42) (actual time=130.007..201.407 rows=20692.00 loops=1)
+                                      Output: o.id, oi.quantity, oi.unit_price, oi.book_id
+                                      Inner Unique: true
+                                      Hash Cond: (o.id = s.order_id)
+                                      Buffers: shared hit=8088
+                                      ->  Foreign Scan  (cost=15.00..35.00 rows=5000 width=46) (actual time=121.769..189.964 rows=56342.00 loops=1)
+                                            Output: o.id, oi.quantity, oi.unit_price, oi.order_id, oi.book_id
+                                            Relations: (bookstore.orders o) INNER JOIN (bookstore.order_items oi)
+                                            Local server startup cost: 10
+                                            Remote query: SELECT r2.`id`, r4.`quantity`, r4.`unit_price`, r4.`order_id`, r4.`book_id` FROM (`bookstore`.`orders` r2 INNER JOIN `bookstore`.`order_items` r4 ON (((r2.`id` = r4.`order_id`)))) WHERE ((r2.`ordered_at` >= '2026-08-15 00:00:00')) ORDER BY r2.`id` IS NULL, r2.`id` ASC
+                                      ->  Hash  (cost=2672.27..2672.27 rows=8191 width=4) (actual time=3.917..3.918 rows=8304.00 loops=1)
+                                            Output: s.order_id
+                                            Buckets: 16384 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 420kB
+                                            Buffers: shared hit=8088
+                                            ->  Index Scan using shipments_status_delivered_at_idx on app.shipments s  (cost=0.42..2672.27 rows=8191 width=4) (actual time=0.037..2.976 rows=8304.00 loops=1)
+                                                  Output: s.order_id
+                                                  Index Cond: (((s.status)::text = 'delivered'::text) AND (s.delivered_at >= '2026-09-01 00:00:00'::timestamp without time zone) AND (s.delivered_at < '2026-10-01 00:00:00'::timestamp without time zone))
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=8088
+Planning Time: 1.948 ms
+Execution Time: 403.637 ms

@@ -1,0 +1,7 @@
+-> Sort: b.genre  (actual time=1028..1028 rows=18 loops=1)
+    -> Table scan on <temporary>  (actual time=1028..1028 rows=18 loops=1)
+        -> Aggregate using temporary table  (actual time=1028..1028 rows=18 loops=1)
+            -> Nested loop inner join  (cost=5698 rows=7122) (actual time=0.254..28.9 rows=7122 loops=1)
+                -> Index range scan on r using reviews_created_at_idx over ('2026-10-01 00:00:00' <= created_at), with index condition: (r.created_at >= TIMESTAMP'2026-10-01 00:00:00')  (cost=3205 rows=7122) (actual time=0.248..12.3 rows=7122 loops=1)
+                -> Single-row index lookup on b using PRIMARY (id=r.book_id)  (cost=0.25 rows=1) (actual time=0.00213..0.00216 rows=1 loops=7122)
+

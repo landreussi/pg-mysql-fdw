@@ -1,0 +1,49 @@
+GroupAggregate  (cost=4697.71..361771.83 rows=18 width=24) (actual time=55.121..1309.631 rows=18.00 loops=1)
+  Output: b.genre, count(*), sum(CASE WHEN EXISTS(SubPlan 1) THEN 1 ELSE 0 END)
+  Group Key: b.genre
+  Buffers: shared hit=2253712
+  ->  Sort  (cost=4697.71..4715.94 rows=7291 width=16) (actual time=25.714..26.970 rows=7122.00 loops=1)
+        Output: b.genre, r.customer_id, r.book_id
+        Sort Key: b.genre
+        Sort Method: quicksort  Memory: 436kB
+        Buffers: shared hit=2019
+        ->  Hash Join  (cost=3677.42..4229.93 rows=7291 width=16) (actual time=20.637..24.356 rows=7122.00 loops=1)
+              Output: b.genre, r.customer_id, r.book_id
+              Inner Unique: true
+              Hash Cond: (r.book_id = b.id)
+              Buffers: shared hit=2019
+              ->  Index Scan using reviews_created_at_idx on native.reviews r  (cost=0.42..533.79 rows=7291 width=8) (actual time=0.009..1.573 rows=7122.00 loops=1)
+                    Output: r.id, r.book_id, r.customer_id, r.rating, r.title, r.body, r.helpful_votes, r.created_at
+                    Index Cond: (r.created_at >= '2026-10-01 00:00:00'::timestamp without time zone)
+                    Index Searches: 1
+                    Buffers: shared hit=592
+              ->  Hash  (cost=2427.00..2427.00 rows=100000 width=12) (actual time=20.562..20.563 rows=100000.00 loops=1)
+                    Output: b.genre, b.id
+                    Buckets: 131072  Batches: 1  Memory Usage: 5488kB
+                    Buffers: shared hit=1427
+                    ->  Seq Scan on native.books b  (cost=0.00..2427.00 rows=100000 width=12) (actual time=0.007..8.786 rows=100000.00 loops=1)
+                          Output: b.genre, b.id
+                          Buffers: shared hit=1427
+  SubPlan 1
+    ->  Hash Join  (cost=14.26..48.96 rows=1 width=0) (actual time=0.180..0.180 rows=0.41 loops=7122)
+          Inner Unique: true
+          Hash Cond: (oi.order_id = o.id)
+          Buffers: shared hit=2251693
+          ->  Index Scan using order_items_book_id_idx on native.order_items oi  (cost=0.43..35.05 rows=30 width=4) (actual time=0.003..0.130 rows=645.24 loops=6691)
+                Output: oi.id, oi.order_id, oi.line_no, oi.book_id, oi.quantity, oi.unit_price
+                Index Cond: (oi.book_id = r.book_id)
+                Index Searches: 6691
+                Buffers: shared hit=2054266
+          ->  Hash  (cost=13.70..13.70 rows=11 width=4) (actual time=0.017..0.017 rows=24.64 loops=7122)
+                Output: o.id
+                Buckets: 4096 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 106kB
+                Buffers: shared hit=197427
+                ->  Index Scan using orders_customer_id_ordered_at_idx on native.orders o  (cost=0.42..13.70 rows=11 width=4) (actual time=0.003..0.015 rows=24.64 loops=7122)
+                      Output: o.id
+                      Index Cond: (o.customer_id = r.customer_id)
+                      Index Searches: 7122
+                      Buffers: shared hit=197427
+Planning:
+  Buffers: shared hit=50
+Planning Time: 0.428 ms
+Execution Time: 1309.680 ms

@@ -1,0 +1,122 @@
+Limit  (cost=15321.41..15321.45 rows=15 width=60) (actual time=42.500..44.128 rows=15.00 loops=1)
+  Output: p.id, p.name, (count(DISTINCT o.id)), (sum(((oi.quantity)::numeric * oi.unit_price)))
+  Buffers: shared hit=120590
+  ->  Sort  (cost=15321.41..15322.66 rows=500 width=60) (actual time=42.499..44.126 rows=15.00 loops=1)
+        Output: p.id, p.name, (count(DISTINCT o.id)), (sum(((oi.quantity)::numeric * oi.unit_price)))
+        Sort Key: (sum(((oi.quantity)::numeric * oi.unit_price))) DESC, p.id
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=120590
+        ->  GroupAggregate  (cost=12775.41..15309.14 rows=500 width=60) (actual time=34.756..44.011 rows=500.00 loops=1)
+              Output: p.id, p.name, count(DISTINCT o.id), sum(((oi.quantity)::numeric * oi.unit_price))
+              Group Key: p.id
+              Buffers: shared hit=120590
+              ->  Gather Merge  (cost=12775.41..15057.92 rows=19598 width=33) (actual time=34.397..39.345 rows=20692.00 loops=1)
+                    Output: p.id, p.name, o.id, oi.quantity, oi.unit_price
+                    Workers Planned: 2
+                    Workers Launched: 2
+                    Buffers: shared hit=120590
+                    ->  Sort  (cost=11775.38..11795.80 rows=8166 width=33) (actual time=31.154..31.509 rows=6897.33 loops=3)
+                          Output: p.id, p.name, o.id, oi.quantity, oi.unit_price
+                          Sort Key: p.id, o.id
+                          Sort Method: quicksort  Memory: 927kB
+                          Buffers: shared hit=120590
+                          Worker 0:  actual time=29.535..29.839 rows=5407.00 loops=1
+                            Sort Method: quicksort  Memory: 491kB
+                            Buffers: shared hit=31297
+                          Worker 1:  actual time=29.838..30.151 rows=5444.00 loops=1
+                            Sort Method: quicksort  Memory: 493kB
+                            Buffers: shared hit=31589
+                          ->  Hash Join  (cost=159.68..11244.78 rows=8166 width=33) (actual time=0.644..27.117 rows=6897.33 loops=3)
+                                Output: p.id, p.name, o.id, oi.quantity, oi.unit_price
+                                Inner Unique: true
+                                Hash Cond: (b.publisher_id = p.id)
+                                Buffers: shared hit=120576
+                                Worker 0:  actual time=0.412..25.700 rows=5407.00 loops=1
+                                  Buffers: shared hit=31290
+                                Worker 1:  actual time=0.431..26.069 rows=5444.00 loops=1
+                                  Buffers: shared hit=31582
+                                ->  Nested Loop  (cost=144.43..11207.92 rows=8166 width=17) (actual time=0.421..25.193 rows=6897.33 loops=3)
+                                      Output: o.id, oi.quantity, oi.unit_price, b.publisher_id
+                                      Inner Unique: true
+                                      Buffers: shared hit=120524
+                                      Worker 0:  actual time=0.160..23.837 rows=5407.00 loops=1
+                                        Buffers: shared hit=31266
+                                      Worker 1:  actual time=0.184..24.191 rows=5444.00 loops=1
+                                        Buffers: shared hit=31558
+                                      ->  Nested Loop  (cost=144.13..8664.22 rows=8166 width=17) (actual time=0.403..12.273 rows=6897.33 loops=3)
+                                            Output: o.id, oi.quantity, oi.unit_price, oi.book_id
+                                            Buffers: shared hit=58446
+                                            Worker 0:  actual time=0.138..11.463 rows=5407.00 loops=1
+                                              Buffers: shared hit=15044
+                                            Worker 1:  actual time=0.160..11.654 rows=5444.00 loops=1
+                                              Buffers: shared hit=15225
+                                            ->  Nested Loop  (cost=143.71..6907.33 rows=3267 width=8) (actual time=0.371..4.872 rows=2768.00 loops=3)
+                                                  Output: s.order_id, o.id
+                                                  Inner Unique: true
+                                                  Buffers: shared hit=25090
+                                                  Worker 0:  actual time=0.101..4.386 rows=2139.00 loops=1
+                                                    Buffers: shared hit=6448
+                                                  Worker 1:  actual time=0.110..4.435 rows=2166.00 loops=1
+                                                    Buffers: shared hit=6530
+                                                  ->  Parallel Bitmap Heap Scan on native.shipments s  (cost=143.28..4840.04 rows=3267 width=4) (actual time=0.332..0.717 rows=2768.00 loops=3)
+                                                        Output: s.id, s.order_id, s.carrier, s.tracking_number, s.status, s.shipped_at, s.delivered_at
+                                                        Recheck Cond: (((s.status)::text = 'delivered'::text) AND (s.delivered_at >= '2026-09-01 00:00:00'::timestamp without time zone) AND (s.delivered_at < '2026-10-01 00:00:00'::timestamp without time zone))
+                                                        Heap Blocks: exact=70
+                                                        Buffers: shared hit=173
+                                                        Worker 0:  actual time=0.052..0.419 rows=2139.00 loops=1
+                                                          Heap Blocks: exact=29
+                                                          Buffers: shared hit=29
+                                                        Worker 1:  actual time=0.055..0.430 rows=2166.00 loops=1
+                                                          Heap Blocks: exact=30
+                                                          Buffers: shared hit=30
+                                                        ->  Bitmap Index Scan on shipments_status_delivered_at_idx  (cost=0.00..141.32 rows=7840 width=0) (actual time=0.871..0.871 rows=8304.00 loops=1)
+                                                              Index Cond: (((s.status)::text = 'delivered'::text) AND (s.delivered_at >= '2026-09-01 00:00:00'::timestamp without time zone) AND (s.delivered_at < '2026-10-01 00:00:00'::timestamp without time zone))
+                                                              Index Searches: 1
+                                                              Buffers: shared hit=44
+                                                  ->  Index Only Scan using orders_pkey on native.orders o  (cost=0.42..0.63 rows=1 width=4) (actual time=0.001..0.001 rows=1.00 loops=8304)
+                                                        Output: o.id
+                                                        Index Cond: (o.id = s.order_id)
+                                                        Heap Fetches: 0
+                                                        Index Searches: 8304
+                                                        Buffers: shared hit=24917
+                                                        Worker 0:  actual time=0.001..0.001 rows=1.00 loops=2139
+                                                          Buffers: shared hit=6419
+                                                        Worker 1:  actual time=0.001..0.001 rows=1.00 loops=2166
+                                                          Buffers: shared hit=6500
+                                            ->  Index Scan using order_items_order_id_line_no_key on native.order_items oi  (cost=0.43..0.51 rows=3 width=17) (actual time=0.002..0.002 rows=2.49 loops=8304)
+                                                  Output: oi.id, oi.order_id, oi.line_no, oi.book_id, oi.quantity, oi.unit_price
+                                                  Index Cond: (oi.order_id = o.id)
+                                                  Index Searches: 8304
+                                                  Buffers: shared hit=33356
+                                                  Worker 0:  actual time=0.002..0.003 rows=2.53 loops=2139
+                                                    Buffers: shared hit=8596
+                                                  Worker 1:  actual time=0.002..0.003 rows=2.51 loops=2166
+                                                    Buffers: shared hit=8695
+                                      ->  Index Scan using books_pkey on native.books b  (cost=0.29..0.31 rows=1 width=8) (actual time=0.002..0.002 rows=1.00 loops=20692)
+                                            Output: b.id, b.isbn, b.title, b.publisher_id, b.genre, b.language, b.published_on, b.pages, b.price, b.created_at
+                                            Index Cond: (b.id = oi.book_id)
+                                            Index Searches: 20692
+                                            Buffers: shared hit=62078
+                                            Worker 0:  actual time=0.002..0.002 rows=1.00 loops=5407
+                                              Buffers: shared hit=16222
+                                            Worker 1:  actual time=0.002..0.002 rows=1.00 loops=5444
+                                              Buffers: shared hit=16333
+                                ->  Hash  (cost=9.00..9.00 rows=500 width=20) (actual time=0.212..0.212 rows=500.00 loops=3)
+                                      Output: p.id, p.name
+                                      Buckets: 1024  Batches: 1  Memory Usage: 34kB
+                                      Buffers: shared hit=52
+                                      Worker 0:  actual time=0.240..0.240 rows=500.00 loops=1
+                                        Buffers: shared hit=24
+                                      Worker 1:  actual time=0.234..0.234 rows=500.00 loops=1
+                                        Buffers: shared hit=24
+                                      ->  Seq Scan on native.publishers p  (cost=0.00..9.00 rows=500 width=20) (actual time=0.045..0.107 rows=500.00 loops=3)
+                                            Output: p.id, p.name
+                                            Buffers: shared hit=52
+                                            Worker 0:  actual time=0.061..0.124 rows=500.00 loops=1
+                                              Buffers: shared hit=24
+                                            Worker 1:  actual time=0.068..0.133 rows=500.00 loops=1
+                                              Buffers: shared hit=24
+Planning:
+  Buffers: shared hit=74
+Planning Time: 1.097 ms
+Execution Time: 44.269 ms

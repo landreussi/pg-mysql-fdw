@@ -1,0 +1,52 @@
+Limit  (cost=15926.11..15926.16 rows=20 width=1196) (actual time=326.018..326.023 rows=20.00 loops=1)
+  Output: b.id, b.title, a.last_name, p.name, r.review_count, r.avg_rating
+  Buffers: shared hit=11647
+  ->  Sort  (cost=15926.11..16238.61 rows=125000 width=1196) (actual time=326.017..326.020 rows=20.00 loops=1)
+        Output: b.id, b.title, a.last_name, p.name, r.review_count, r.avg_rating
+        Sort Key: r.avg_rating DESC, r.review_count DESC, b.id
+        Sort Method: top-N heapsort  Memory: 29kB
+        Buffers: shared hit=11647
+        ->  Hash Join  (cost=12542.48..12599.90 rows=125000 width=1196) (actual time=323.222..325.974 rows=97.00 loops=1)
+              Output: b.id, b.title, a.last_name, p.name, r.review_count, r.avg_rating
+              Hash Cond: (b.id = r.book_id)
+              Buffers: shared hit=11647
+              ->  Foreign Scan  (cost=15.00..35.00 rows=5000 width=938) (actual time=23.727..25.911 rows=7005.00 loops=1)
+                    Output: b.id, b.title, p.name
+                    Relations: (bookstore.books b) INNER JOIN (bookstore.publishers p)
+                    Local server startup cost: 10
+                    Remote query: SELECT r2.`id`, r2.`title`, r8.`name` FROM (`bookstore`.`books` r2 INNER JOIN `bookstore`.`publishers` r8 ON (((r2.`publisher_id` = r8.`id`)))) WHERE ((r2.`genre` = 'Science Fiction')) ORDER BY r2.`id` IS NULL, r2.`id` ASC
+              ->  Hash  (cost=12464.98..12464.98 rows=5000 width=266) (actual time=299.487..299.489 rows=1314.00 loops=1)
+                    Output: r.review_count, r.avg_rating, r.book_id, ba.book_id, a.last_name
+                    Buckets: 8192  Batches: 1  Memory Usage: 146kB
+                    Buffers: shared hit=11647
+                    ->  Hash Join  (cost=12431.86..12464.98 rows=5000 width=266) (actual time=253.153..299.250 rows=1314.00 loops=1)
+                          Output: r.review_count, r.avg_rating, r.book_id, ba.book_id, a.last_name
+                          Inner Unique: true
+                          Hash Cond: (ba.book_id = r.book_id)
+                          Buffers: shared hit=11647
+                          ->  Foreign Scan  (cost=15.00..35.00 rows=5000 width=222) (actual time=168.206..207.262 rows=100000.00 loops=1)
+                                Output: ba.book_id, a.last_name
+                                Relations: (bookstore.book_authors ba) INNER JOIN (bookstore.authors a)
+                                Local server startup cost: 10
+                                Remote query: SELECT r4.`book_id`, r6.`last_name` FROM (`bookstore`.`book_authors` r4 INNER JOIN `bookstore`.`authors` r6 ON (((r4.`author_id` = r6.`id`)))) WHERE ((r4.`author_order` = 1)) ORDER BY r4.`book_id` IS NULL, r4.`book_id` ASC
+                          ->  Hash  (cost=12249.52..12249.52 rows=13387 width=44) (actual time=84.934..84.935 rows=1314.00 loops=1)
+                                Output: r.review_count, r.avg_rating, r.book_id
+                                Buckets: 16384  Batches: 1  Memory Usage: 195kB
+                                Buffers: shared hit=11647
+                                ->  Subquery Scan on r  (cost=11479.78..12249.52 rows=13387 width=44) (actual time=70.840..84.682 rows=1314.00 loops=1)
+                                      Output: r.review_count, r.avg_rating, r.book_id
+                                      Buffers: shared hit=11647
+                                      ->  HashAggregate  (cost=11479.78..12115.65 rows=13387 width=44) (actual time=70.838..84.568 rows=1314.00 loops=1)
+                                            Output: reviews.book_id, count(*), round(avg(reviews.rating), 2)
+                                            Group Key: reviews.book_id
+                                            Filter: (count(*) >= 10)
+                                            Batches: 1  Memory Usage: 14353kB
+                                            Rows Removed by Filter: 57476
+                                            Buffers: shared hit=11647
+                                            ->  Index Scan using reviews_created_at_idx on app.reviews  (cost=0.42..10407.17 rows=143015 width=6) (actual time=0.024..32.969 rows=142956.00 loops=1)
+                                                  Output: reviews.id, reviews.book_id, reviews.customer_id, reviews.rating, reviews.title, reviews.body, reviews.helpful_votes, reviews.created_at
+                                                  Index Cond: (reviews.created_at >= '2025-01-01 00:00:00'::timestamp without time zone)
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=11647
+Planning Time: 0.703 ms
+Execution Time: 326.791 ms

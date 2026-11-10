@@ -1,0 +1,37 @@
+GroupAggregate  (cost=2130.66..6033.84 rows=191 width=114) (actual time=4012.082..4014.725 rows=18.00 loops=1)
+  Output: b.genre, count(*), sum(CASE WHEN (ANY ((r.customer_id = (hashed SubPlan 2).col1) AND (r.book_id = (hashed SubPlan 2).col2))) THEN 1 ELSE 0 END)
+  Group Key: b.genre
+  Buffers: shared hit=592
+  ->  Sort  (cost=2130.66..2131.14 rows=191 width=106) (actual time=93.276..93.722 rows=7122.00 loops=1)
+        Output: b.genre, r.customer_id, r.book_id
+        Sort Key: b.genre
+        Sort Method: quicksort  Memory: 436kB
+        Buffers: shared hit=592
+        ->  Merge Join  (cost=1080.15..2123.42 rows=191 width=106) (actual time=40.752..91.949 rows=7122.00 loops=1)
+              Output: b.genre, r.customer_id, r.book_id
+              Merge Cond: (b.id = r.book_id)
+              Buffers: shared hit=592
+              ->  Foreign Scan on legacy_fetch.books b  (cost=10.00..1010.00 rows=1000 width=102) (actual time=37.672..81.219 rows=100000.00 loops=1)
+                    Output: b.id, b.isbn, b.title, b.publisher_id, b.genre, b.language, b.published_on, b.pages, b.price, b.created_at
+                    Local server startup cost: 10
+                    Remote query: SELECT `id`, `genre` FROM `bookstore`.`books` ORDER BY `id` IS NULL, `id` ASC
+              ->  Sort  (cost=1070.15..1089.58 rows=7773 width=8) (actual time=3.075..3.416 rows=7122.00 loops=1)
+                    Output: r.customer_id, r.book_id
+                    Sort Key: r.book_id
+                    Sort Method: quicksort  Memory: 359kB
+                    Buffers: shared hit=592
+                    ->  Index Scan using reviews_created_at_idx on app.reviews r  (cost=0.42..567.85 rows=7773 width=8) (actual time=0.016..1.951 rows=7122.00 loops=1)
+                          Output: r.customer_id, r.book_id
+                          Index Cond: (r.created_at >= '2026-10-01 00:00:00'::timestamp without time zone)
+                          Index Searches: 1
+                          Buffers: shared hit=592
+  SubPlan 2
+    ->  Foreign Scan  (cost=15.00..35.00 rows=5000 width=8) (actual time=3102.902..3570.413 rows=1249862.00 loops=1)
+          Output: o.customer_id, oi.book_id
+          Relations: (bookstore.orders o) INNER JOIN (bookstore.order_items oi)
+          Local server startup cost: 10
+          Remote query: SELECT r1.`customer_id`, r2.`book_id` FROM (`bookstore`.`orders` r1 INNER JOIN `bookstore`.`order_items` r2 ON (((r1.`id` = r2.`order_id`))))
+Planning:
+  Buffers: shared hit=4
+Planning Time: 0.698 ms
+Execution Time: 4021.009 ms

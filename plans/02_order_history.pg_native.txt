@@ -1,0 +1,51 @@
+Limit  (cost=25.36..25.39 rows=12 width=80) (actual time=1.353..1.359 rows=50.00 loops=1)
+  Output: o.id, o.ordered_at, o.status, oi.line_no, b.title, oi.quantity, oi.unit_price, s.carrier, s.status, s.delivered_at
+  Buffers: shared hit=2463
+  ->  Sort  (cost=25.36..25.39 rows=12 width=80) (actual time=1.353..1.355 rows=50.00 loops=1)
+        Output: o.id, o.ordered_at, o.status, oi.line_no, b.title, oi.quantity, oi.unit_price, s.carrier, s.status, s.delivered_at
+        Sort Key: o.ordered_at DESC, o.id DESC, oi.line_no
+        Sort Method: top-N heapsort  Memory: 38kB
+        Buffers: shared hit=2463
+        ->  Nested Loop  (cost=1.98..25.14 rows=12 width=80) (actual time=0.042..1.217 rows=377.00 loops=1)
+              Output: o.id, o.ordered_at, o.status, oi.line_no, b.title, oi.quantity, oi.unit_price, s.carrier, s.status, s.delivered_at
+              Inner Unique: true
+              Buffers: shared hit=2463
+              ->  Nested Loop  (cost=1.69..21.41 rows=12 width=59) (actual time=0.036..0.706 rows=377.00 loops=1)
+                    Output: o.id, o.ordered_at, o.status, oi.line_no, oi.quantity, oi.unit_price, oi.book_id, s.carrier, s.status, s.delivered_at
+                    Buffers: shared hit=1332
+                    ->  Nested Loop Left Join  (cost=1.26..18.72 rows=5 width=44) (actual time=0.030..0.362 rows=147.00 loops=1)
+                          Output: o.id, o.ordered_at, o.status, s.carrier, s.status, s.delivered_at
+                          Inner Unique: true
+                          Buffers: shared hit=741
+                          ->  Nested Loop  (cost=0.84..16.44 rows=5 width=21) (actual time=0.023..0.090 rows=147.00 loops=1)
+                                Output: o.id, o.ordered_at, o.status
+                                Buffers: shared hit=154
+                                ->  Index Scan using customers_email_key on native.customers c  (cost=0.42..2.64 rows=1 width=4) (actual time=0.013..0.013 rows=1.00 loops=1)
+                                      Output: c.id, c.email, c.full_name, c.country, c.loyalty_tier, c.created_at
+                                      Index Cond: ((c.email)::text = 'customer42@example.com'::text)
+                                      Index Searches: 1
+                                      Buffers: shared hit=4
+                                ->  Index Scan using orders_customer_id_ordered_at_idx on native.orders o  (cost=0.42..13.70 rows=11 width=25) (actual time=0.008..0.059 rows=147.00 loops=1)
+                                      Output: o.id, o.customer_id, o.status, o.ordered_at, o.total_amount, o.shipping_country
+                                      Index Cond: (o.customer_id = c.id)
+                                      Index Searches: 1
+                                      Buffers: shared hit=150
+                          ->  Index Scan using shipments_order_id_key on native.shipments s  (cost=0.42..0.46 rows=1 width=27) (actual time=0.002..0.002 rows=0.99 loops=147)
+                                Output: s.id, s.order_id, s.carrier, s.tracking_number, s.status, s.shipped_at, s.delivered_at
+                                Index Cond: (s.order_id = o.id)
+                                Index Searches: 147
+                                Buffers: shared hit=587
+                    ->  Index Scan using order_items_order_id_line_no_key on native.order_items oi  (cost=0.43..0.51 rows=3 width=19) (actual time=0.002..0.002 rows=2.56 loops=147)
+                          Output: oi.id, oi.order_id, oi.line_no, oi.book_id, oi.quantity, oi.unit_price
+                          Index Cond: (oi.order_id = o.id)
+                          Index Searches: 147
+                          Buffers: shared hit=591
+              ->  Index Scan using books_pkey on native.books b  (cost=0.29..0.31 rows=1 width=29) (actual time=0.001..0.001 rows=1.00 loops=377)
+                    Output: b.id, b.isbn, b.title, b.publisher_id, b.genre, b.language, b.published_on, b.pages, b.price, b.created_at
+                    Index Cond: (b.id = oi.book_id)
+                    Index Searches: 377
+                    Buffers: shared hit=1131
+Planning:
+  Buffers: shared hit=92
+Planning Time: 1.006 ms
+Execution Time: 1.402 ms

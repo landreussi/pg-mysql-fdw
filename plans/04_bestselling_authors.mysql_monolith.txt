@@ -1,0 +1,13 @@
+-> Limit: 10 row(s)  (actual time=508..508 rows=10 loops=1)
+    -> Sort: copies_sold DESC, a.id, limit input to 10 row(s) per chunk  (actual time=508..508 rows=10 loops=1)
+        -> Table scan on <temporary>  (actual time=503..506 rows=17338 loops=1)
+            -> Aggregate using temporary table  (actual time=503..503 rows=17338 loops=1)
+                -> Nested loop inner join  (cost=152897 rows=144596) (actual time=1.82..411 rows=82190 loops=1)
+                    -> Nested loop inner join  (cost=102288 rows=144596) (actual time=1.82..290 rows=82190 loops=1)
+                        -> Nested loop inner join  (cost=60393 rows=109673) (actual time=1.82..165 rows=63851 loops=1)
+                            -> Filter: (o.`status` <> 'cancelled')  (cost=22008 rows=44015) (actual time=1.81..40.4 rows=25540 loops=1)
+                                -> Index range scan on o using orders_ordered_at_idx over ('2026-07-01 00:00:00' <= ordered_at < '2026-10-01 00:00:00'), with index condition: ((o.ordered_at >= TIMESTAMP'2026-07-01 00:00:00') and (o.ordered_at < TIMESTAMP'2026-10-01 00:00:00'))  (cost=22008 rows=48906) (actual time=1.8..37.3 rows=26314 loops=1)
+                            -> Index lookup on oi using order_items_order_id_line_no_key (order_id=o.id)  (cost=0.623 rows=2.49) (actual time=0.00416..0.00464 rows=2.5 loops=25540)
+                        -> Covering index lookup on ba using PRIMARY (book_id=oi.book_id)  (cost=0.25 rows=1.32) (actual time=0.00135..0.00178 rows=1.29 loops=63851)
+                    -> Single-row index lookup on a using PRIMARY (id=ba.author_id)  (cost=0.25 rows=1) (actual time=0.00129..0.00132 rows=1 loops=82190)
+

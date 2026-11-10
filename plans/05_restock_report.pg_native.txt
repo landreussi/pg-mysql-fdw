@@ -1,0 +1,98 @@
+Limit  (cost=35766.71..35766.78 rows=25 width=61) (actual time=166.199..166.850 rows=25.00 loops=1)
+  Output: b.id, b.title, p.name, i.quantity, i.reorder_level, (COALESCE(sales.units, '0'::bigint))
+  Buffers: shared hit=96171
+  ->  Sort  (cost=35766.71..35819.91 rows=21278 width=61) (actual time=166.198..166.847 rows=25.00 loops=1)
+        Output: b.id, b.title, p.name, i.quantity, i.reorder_level, (COALESCE(sales.units, '0'::bigint))
+        Sort Key: (COALESCE(sales.units, '0'::bigint)) DESC, b.id
+        Sort Method: top-N heapsort  Memory: 29kB
+        Buffers: shared hit=96171
+        ->  Hash Left Join  (cost=32364.56..35166.26 rows=21278 width=61) (actual time=143.629..165.281 rows=10276.00 loops=1)
+              Output: b.id, b.title, p.name, i.quantity, i.reorder_level, COALESCE(sales.units, '0'::bigint)
+              Inner Unique: true
+              Hash Cond: (i.book_id = sales.book_id)
+              Buffers: shared hit=96171
+              ->  Hash Join  (cost=3589.04..6334.89 rows=21278 width=57) (actual time=33.284..51.755 rows=10276.00 loops=1)
+                    Output: i.quantity, i.reorder_level, i.book_id, b.id, b.title, p.name
+                    Inner Unique: true
+                    Hash Cond: (b.publisher_id = p.id)
+                    Buffers: shared hit=60406
+                    ->  Hash Join  (cost=3573.79..6263.31 rows=21278 width=45) (actual time=33.184..49.775 rows=10276.00 loops=1)
+                          Output: i.quantity, i.reorder_level, i.book_id, b.id, b.title, b.publisher_id
+                          Inner Unique: true
+                          Hash Cond: (b.id = i.book_id)
+                          Buffers: shared hit=60402
+                          ->  Seq Scan on native.books b  (cost=0.00..2427.00 rows=100000 width=33) (actual time=0.002..5.138 rows=100000.00 loops=1)
+                                Output: b.id, b.isbn, b.title, b.publisher_id, b.genre, b.language, b.published_on, b.pages, b.price, b.created_at
+                                Buffers: shared hit=1427
+                          ->  Hash  (cost=3307.82..3307.82 rows=21278 width=12) (actual time=33.170..33.171 rows=10276.00 loops=1)
+                                Output: i.quantity, i.reorder_level, i.book_id
+                                Buckets: 32768  Batches: 1  Memory Usage: 698kB
+                                Buffers: shared hit=58975
+                                ->  Index Scan using inventory_warehouse_code_quantity_idx on native.inventory i  (cost=0.42..3307.82 rows=21278 width=12) (actual time=0.011..31.973 rows=10276.00 loops=1)
+                                      Output: i.quantity, i.reorder_level, i.book_id
+                                      Index Cond: ((i.warehouse_code)::text = 'US-NYC'::text)
+                                      Filter: (i.quantity < i.reorder_level)
+                                      Rows Removed by Filter: 52391
+                                      Index Searches: 1
+                                      Buffers: shared hit=58975
+                    ->  Hash  (cost=9.00..9.00 rows=500 width=20) (actual time=0.095..0.095 rows=500.00 loops=1)
+                          Output: p.name, p.id
+                          Buckets: 1024  Batches: 1  Memory Usage: 35kB
+                          Buffers: shared hit=4
+                          ->  Seq Scan on native.publishers p  (cost=0.00..9.00 rows=500 width=20) (actual time=0.005..0.043 rows=500.00 loops=1)
+                                Output: p.name, p.id
+                                Buffers: shared hit=4
+              ->  Hash  (cost=28247.58..28247.58 rows=42235 width=12) (actual time=110.086..110.730 rows=36710.00 loops=1)
+                    Output: sales.units, sales.book_id
+                    Buckets: 65536  Batches: 1  Memory Usage: 2090kB
+                    Buffers: shared hit=35765
+                    ->  Subquery Scan on sales  (cost=27402.88..28247.58 rows=42235 width=12) (actual time=95.770..104.961 rows=36710.00 loops=1)
+                          Output: sales.units, sales.book_id
+                          Buffers: shared hit=35765
+                          ->  HashAggregate  (cost=27402.88..27825.23 rows=42235 width=12) (actual time=95.769..101.618 rows=36710.00 loops=1)
+                                Output: oi.book_id, sum(oi.quantity)
+                                Group Key: oi.book_id
+                                Batches: 1  Memory Usage: 3097kB
+                                Buffers: shared hit=35765
+                                ->  Gather  (cost=4653.53..27070.33 rows=66510 width=6) (actual time=78.246..82.622 rows=66483.00 loops=1)
+                                      Output: oi.book_id, oi.quantity
+                                      Workers Planned: 2
+                                      Workers Launched: 2
+                                      Buffers: shared hit=35765
+                                      ->  Parallel Hash Join  (cost=3653.53..19419.33 rows=27712 width=6) (actual time=75.162..83.167 rows=22161.00 loops=3)
+                                            Output: oi.book_id, oi.quantity
+                                            Inner Unique: true
+                                            Hash Cond: (oi.order_id = o.id)
+                                            Buffers: shared hit=35765
+                                            Worker 0:  actual time=73.705..85.420 rows=32118.00 loops=1
+                                              Buffers: shared hit=9338
+                                            Worker 1:  actual time=73.859..85.593 rows=32189.00 loops=1
+                                              Buffers: shared hit=9657
+                                            ->  Parallel Seq Scan on native.order_items oi  (cost=0.00..14398.76 rows=520776 width=10) (actual time=0.010..28.390 rows=416620.67 loops=3)
+                                                  Output: oi.id, oi.order_id, oi.line_no, oi.book_id, oi.quantity, oi.unit_price
+                                                  Buffers: shared hit=9191
+                                                  Worker 0:  actual time=0.013..30.409 rows=365590.00 loops=1
+                                                    Buffers: shared hit=2689
+                                                  Worker 1:  actual time=0.014..30.487 rows=365296.00 loops=1
+                                                    Buffers: shared hit=2686
+                                            ->  Parallel Hash  (cost=3457.89..3457.89 rows=15651 width=4) (actual time=7.911..7.911 rows=8836.33 loops=3)
+                                                  Output: o.id
+                                                  Buckets: 32768  Batches: 1  Memory Usage: 1344kB
+                                                  Buffers: shared hit=26574
+                                                  Worker 0:  actual time=6.609..6.610 rows=6632.00 loops=1
+                                                    Buffers: shared hit=6649
+                                                  Worker 1:  actual time=6.811..6.812 rows=6954.00 loops=1
+                                                    Buffers: shared hit=6971
+                                                  ->  Parallel Index Scan using orders_ordered_at_idx on native.orders o  (cost=0.42..3457.89 rows=15651 width=4) (actual time=0.038..5.737 rows=8836.33 loops=3)
+                                                        Output: o.id
+                                                        Index Cond: (o.ordered_at >= '2026-08-01 00:00:00'::timestamp without time zone)
+                                                        Index Searches: 1
+                                                        Buffers: shared hit=26574
+                                                        Worker 0:  actual time=0.045..4.806 rows=6632.00 loops=1
+                                                          Buffers: shared hit=6649
+                                                        Worker 1:  actual time=0.052..5.000 rows=6954.00 loops=1
+                                                          Buffers: shared hit=6971
+Planning:
+  Buffers: shared hit=42
+Planning Time: 0.519 ms
+Execution Time: 167.256 ms

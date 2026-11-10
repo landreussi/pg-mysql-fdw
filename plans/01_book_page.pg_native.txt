@@ -1,0 +1,68 @@
+Sort  (cost=28.17..28.17 rows=1 width=115) (actual time=0.068..0.070 rows=1.00 loops=1)
+  Output: b.id, b.title, b.price, p.name, a.first_name, a.last_name, ((SubPlan 1)), ((SubPlan 2)), ((SubPlan 3)), ba.author_order
+  Sort Key: ba.author_order
+  Sort Method: quicksort  Memory: 25kB
+  Buffers: shared hit=34
+  ->  Nested Loop  (cost=1.15..28.16 rows=1 width=115) (actual time=0.063..0.065 rows=1.00 loops=1)
+        Output: b.id, b.title, b.price, p.name, a.first_name, a.last_name, (SubPlan 1), (SubPlan 2), (SubPlan 3), ba.author_order
+        Inner Unique: true
+        Buffers: shared hit=34
+        ->  Nested Loop  (cost=0.86..7.53 rows=1 width=58) (actual time=0.019..0.020 rows=1.00 loops=1)
+              Output: b.id, b.title, b.price, p.name, ba.author_order, ba.author_id
+              Buffers: shared hit=9
+              ->  Index Scan using book_authors_pkey on native.book_authors ba  (cost=0.29..2.51 rows=1 width=10) (actual time=0.007..0.007 rows=1.00 loops=1)
+                    Output: ba.book_id, ba.author_id, ba.author_order
+                    Index Cond: (ba.book_id = 4242)
+                    Index Searches: 1
+                    Buffers: shared hit=3
+              ->  Nested Loop  (cost=0.56..5.01 rows=1 width=52) (actual time=0.011..0.012 rows=1.00 loops=1)
+                    Output: b.id, b.title, b.price, p.name
+                    Inner Unique: true
+                    Buffers: shared hit=6
+                    ->  Index Scan using books_pkey on native.books b  (cost=0.29..2.51 rows=1 width=40) (actual time=0.005..0.005 rows=1.00 loops=1)
+                          Output: b.id, b.isbn, b.title, b.publisher_id, b.genre, b.language, b.published_on, b.pages, b.price, b.created_at
+                          Index Cond: (b.id = 4242)
+                          Index Searches: 1
+                          Buffers: shared hit=3
+                    ->  Index Scan using publishers_pkey on native.publishers p  (cost=0.27..2.49 rows=1 width=20) (actual time=0.005..0.005 rows=1.00 loops=1)
+                          Output: p.id, p.name, p.country, p.founded_year, p.created_at
+                          Index Cond: (p.id = b.publisher_id)
+                          Index Searches: 1
+                          Buffers: shared hit=3
+        ->  Index Scan using authors_pkey on native.authors a  (cost=0.29..2.51 rows=1 width=17) (actual time=0.009..0.009 rows=1.00 loops=1)
+              Output: a.id, a.first_name, a.last_name, a.birth_year, a.country, a.created_at
+              Index Cond: (a.id = ba.author_id)
+              Index Searches: 1
+              Buffers: shared hit=3
+        SubPlan 1
+          ->  Aggregate  (cost=12.72..12.74 rows=1 width=32) (actual time=0.014..0.014 rows=1.00 loops=1)
+                Output: round(avg(r.rating), 2)
+                Buffers: shared hit=14
+                ->  Index Scan using reviews_book_id_created_at_idx on native.reviews r  (cost=0.42..12.70 rows=10 width=2) (actual time=0.007..0.010 rows=11.00 loops=1)
+                      Output: r.id, r.book_id, r.customer_id, r.rating, r.title, r.body, r.helpful_votes, r.created_at
+                      Index Cond: (r.book_id = b.id)
+                      Index Searches: 1
+                      Buffers: shared hit=14
+        SubPlan 2
+          ->  Aggregate  (cost=1.72..1.73 rows=1 width=8) (actual time=0.011..0.012 rows=1.00 loops=1)
+                Output: count(*)
+                Buffers: shared hit=4
+                ->  Index Only Scan using reviews_book_id_created_at_idx on native.reviews r_1  (cost=0.42..1.70 rows=10 width=0) (actual time=0.007..0.008 rows=11.00 loops=1)
+                      Output: r_1.book_id, r_1.created_at
+                      Index Cond: (r_1.book_id = b.id)
+                      Heap Fetches: 0
+                      Index Searches: 1
+                      Buffers: shared hit=4
+        SubPlan 3
+          ->  Aggregate  (cost=3.64..3.65 rows=1 width=8) (actual time=0.007..0.007 rows=1.00 loops=1)
+                Output: sum(i.quantity)
+                Buffers: shared hit=4
+                ->  Index Scan using inventory_pkey on native.inventory i  (cost=0.42..3.63 rows=3 width=4) (actual time=0.005..0.006 rows=4.00 loops=1)
+                      Output: i.book_id, i.warehouse_code, i.quantity, i.reorder_level, i.updated_at
+                      Index Cond: (i.book_id = b.id)
+                      Index Searches: 1
+                      Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=24
+Planning Time: 0.251 ms
+Execution Time: 0.113 ms

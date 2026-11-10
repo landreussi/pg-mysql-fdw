@@ -1,0 +1,46 @@
+Limit  (cost=3658.40..3658.46 rows=25 width=954) (actual time=449.913..449.920 rows=25.00 loops=1)
+  Output: b.id, b.title, p.name, i.quantity, i.reorder_level, (COALESCE(sales.units, '0'::bigint))
+  Buffers: shared hit=58975
+  ->  Sort  (cost=3658.40..3661.41 rows=1205 width=954) (actual time=449.913..449.917 rows=25.00 loops=1)
+        Output: b.id, b.title, p.name, i.quantity, i.reorder_level, (COALESCE(sales.units, '0'::bigint))
+        Sort Key: (COALESCE(sales.units, '0'::bigint)) DESC, b.id
+        Sort Method: top-N heapsort  Memory: 29kB
+        Buffers: shared hit=58975
+        ->  Hash Left Join  (cost=3588.10..3624.39 rows=1205 width=954) (actual time=386.245..448.256 rows=10276.00 loops=1)
+              Output: b.id, b.title, p.name, i.quantity, i.reorder_level, COALESCE(sales.units, '0'::bigint)
+              Inner Unique: true
+              Hash Cond: (i.book_id = sales.book_id)
+              Buffers: shared hit=58975
+              ->  Hash Join  (cost=3558.60..3591.73 rows=1205 width=950) (actual time=210.565..270.403 rows=10276.00 loops=1)
+                    Output: i.quantity, i.reorder_level, i.book_id, b.id, b.title, p.name
+                    Inner Unique: true
+                    Hash Cond: (b.id = i.book_id)
+                    Buffers: shared hit=58975
+                    ->  Foreign Scan  (cost=15.00..35.00 rows=5000 width=938) (actual time=185.447..235.147 rows=100000.00 loops=1)
+                          Output: b.id, b.title, p.name
+                          Relations: (bookstore.books b) INNER JOIN (bookstore.publishers p)
+                          Local server startup cost: 10
+                          Remote query: SELECT r2.`id`, r2.`title`, r4.`name` FROM (`bookstore`.`books` r2 INNER JOIN `bookstore`.`publishers` r4 ON (((r2.`publisher_id` = r4.`id`)))) ORDER BY r2.`id` IS NULL, r2.`id` ASC
+                    ->  Hash  (cost=3282.92..3282.92 rows=20855 width=12) (actual time=24.998..24.999 rows=10276.00 loops=1)
+                          Output: i.quantity, i.reorder_level, i.book_id
+                          Buckets: 32768  Batches: 1  Memory Usage: 698kB
+                          Buffers: shared hit=58975
+                          ->  Index Scan using inventory_warehouse_code_quantity_idx on app.inventory i  (cost=0.42..3282.92 rows=20855 width=12) (actual time=0.030..23.725 rows=10276.00 loops=1)
+                                Output: i.quantity, i.reorder_level, i.book_id
+                                Index Cond: ((i.warehouse_code)::text = 'US-NYC'::text)
+                                Filter: (i.quantity < i.reorder_level)
+                                Rows Removed by Filter: 52391
+                                Index Searches: 1
+                                Buffers: shared hit=58975
+              ->  Hash  (cost=27.00..27.00 rows=200 width=12) (actual time=175.674..175.674 rows=36710.00 loops=1)
+                    Output: sales.units, sales.book_id
+                    Buckets: 65536 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 2090kB
+                    ->  Subquery Scan on sales  (cost=15.00..27.00 rows=200 width=12) (actual time=155.052..171.242 rows=36710.00 loops=1)
+                          Output: sales.units, sales.book_id
+                          ->  Foreign Scan  (cost=15.00..25.00 rows=200 width=12) (actual time=155.050..167.934 rows=36710.00 loops=1)
+                                Output: oi.book_id, (sum(oi.quantity))
+                                Relations: Aggregate on ((bookstore.order_items oi) INNER JOIN (bookstore.orders o))
+                                Local server startup cost: 10
+                                Remote query: SELECT r1.`book_id`, sum(r1.`quantity`) FROM (`bookstore`.`order_items` r1 INNER JOIN `bookstore`.`orders` r2 ON (((r1.`order_id` = r2.`id`)))) WHERE ((r2.`ordered_at` >= '2026-08-01 00:00:00')) GROUP BY 1
+Planning Time: 0.697 ms
+Execution Time: 450.664 ms

@@ -1,0 +1,7 @@
+Foreign Scan  (cost=1.00..2.00 rows=1 width=448) (actual time=480.668..480.675 rows=10.00 loops=1)
+  Output: a.id, a.first_name, a.last_name, (sum(oi.quantity))
+  Relations: Aggregate on ((((bookstore.orders o) INNER JOIN (bookstore.order_items oi)) INNER JOIN (bookstore.book_authors ba)) INNER JOIN (bookstore.authors a))
+  Local server startup cost: 10
+  Remote query: SELECT r6.`id`, r6.`first_name`, r6.`last_name`, sum(r2.`quantity`) FROM (((`bookstore`.`orders` r1 INNER JOIN `bookstore`.`order_items` r2 ON (((r1.`id` = r2.`order_id`)))) INNER JOIN `bookstore`.`book_authors` r4 ON (((r2.`book_id` = r4.`book_id`)))) INNER JOIN `bookstore`.`authors` r6 ON (((r4.`author_id` = r6.`id`)))) WHERE ((r1.`ordered_at` >= '2026-07-01 00:00:00')) AND ((r1.`ordered_at` < '2026-10-01 00:00:00')) AND ((r1.`status` <> 'cancelled')) GROUP BY 1, 2, 3 ORDER BY sum(r2.`quantity`) IS NOT NULL, sum(r2.`quantity`) DESC, r6.`id` IS NULL, r6.`id` ASC LIMIT 10
+Planning Time: 1.221 ms
+Execution Time: 480.945 ms

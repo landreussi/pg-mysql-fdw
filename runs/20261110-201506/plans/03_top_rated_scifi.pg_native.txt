@@ -1,0 +1,77 @@
+Limit  (cost=15013.92..15013.97 rows=20 width=92) (actual time=84.225..84.232 rows=20.00 loops=1)
+  Output: b.id, b.title, a.last_name, p.name, r.review_count, r.avg_rating
+  Buffers: shared hit=13679
+  ->  Sort  (cost=15013.92..15016.25 rows=932 width=92) (actual time=84.225..84.229 rows=20.00 loops=1)
+        Output: b.id, b.title, a.last_name, p.name, r.review_count, r.avg_rating
+        Sort Key: r.avg_rating DESC, r.review_count DESC, b.id
+        Sort Method: top-N heapsort  Memory: 29kB
+        Buffers: shared hit=13679
+        ->  Hash Join  (cost=12781.75..14989.12 rows=932 width=92) (actual time=80.979..84.178 rows=97.00 loops=1)
+              Output: b.id, b.title, a.last_name, p.name, r.review_count, r.avg_rating
+              Inner Unique: true
+              Hash Cond: (b.publisher_id = p.id)
+              Buffers: shared hit=13679
+              ->  Nested Loop  (cost=12766.50..14971.40 rows=932 width=80) (actual time=80.880..84.052 rows=97.00 loops=1)
+                    Output: r.review_count, r.avg_rating, b.id, b.title, b.publisher_id, a.last_name
+                    Inner Unique: true
+                    Buffers: shared hit=13675
+                    ->  Nested Loop  (cost=12766.21..14684.97 rows=932 width=77) (actual time=80.875..83.831 rows=97.00 loops=1)
+                          Output: r.review_count, r.avg_rating, b.id, b.title, b.publisher_id, ba.author_id
+                          Join Filter: (b.id = ba.book_id)
+                          Buffers: shared hit=13384
+                          ->  Hash Join  (cost=12765.92..14299.15 rows=935 width=77) (actual time=80.864..83.635 rows=97.00 loops=1)
+                                Output: r.review_count, r.avg_rating, r.book_id, b.id, b.title, b.publisher_id
+                                Inner Unique: true
+                                Hash Cond: (b.id = r.book_id)
+                                Buffers: shared hit=13092
+                                ->  Bitmap Heap Scan on native.books b  (cost=81.25..1596.03 rows=7023 width=33) (actual time=0.423..2.555 rows=7005.00 loops=1)
+                                      Output: b.id, b.isbn, b.title, b.publisher_id, b.genre, b.language, b.published_on, b.pages, b.price, b.created_at
+                                      Recheck Cond: ((b.genre)::text = 'Science Fiction'::text)
+                                      Heap Blocks: exact=1414
+                                      Buffers: shared hit=1445
+                                      ->  Bitmap Index Scan on books_genre_published_on_idx  (cost=0.00..79.49 rows=7023 width=0) (actual time=0.330..0.330 rows=7005.00 loops=1)
+                                            Index Cond: ((b.genre)::text = 'Science Fiction'::text)
+                                            Index Searches: 1
+                                            Buffers: shared hit=31
+                                ->  Hash  (cost=12518.23..12518.23 rows=13316 width=44) (actual time=80.435..80.435 rows=1314.00 loops=1)
+                                      Output: r.review_count, r.avg_rating, r.book_id
+                                      Buckets: 16384  Batches: 1  Memory Usage: 195kB
+                                      Buffers: shared hit=11647
+                                      ->  Subquery Scan on r  (cost=11752.56..12518.23 rows=13316 width=44) (actual time=66.149..80.212 rows=1314.00 loops=1)
+                                            Output: r.review_count, r.avg_rating, r.book_id
+                                            Buffers: shared hit=11647
+                                            ->  HashAggregate  (cost=11752.56..12385.07 rows=13316 width=44) (actual time=66.148..80.092 rows=1314.00 loops=1)
+                                                  Output: reviews.book_id, count(*), round(avg(reviews.rating), 2)
+                                                  Group Key: reviews.book_id
+                                                  Filter: (count(*) >= 10)
+                                                  Batches: 1  Memory Usage: 14353kB
+                                                  Rows Removed by Filter: 57476
+                                                  Buffers: shared hit=11647
+                                                  ->  Index Scan using reviews_created_at_idx on native.reviews  (cost=0.42..10654.55 rows=146401 width=6) (actual time=0.009..31.264 rows=142956.00 loops=1)
+                                                        Output: reviews.id, reviews.book_id, reviews.customer_id, reviews.rating, reviews.title, reviews.body, reviews.helpful_votes, reviews.created_at
+                                                        Index Cond: (reviews.created_at >= '2025-01-01 00:00:00'::timestamp without time zone)
+                                                        Index Searches: 1
+                                                        Buffers: shared hit=11647
+                          ->  Index Scan using book_authors_pkey on native.book_authors ba  (cost=0.29..0.40 rows=1 width=8) (actual time=0.002..0.002 rows=1.00 loops=97)
+                                Output: ba.book_id, ba.author_id, ba.author_order
+                                Index Cond: (ba.book_id = r.book_id)
+                                Filter: (ba.author_order = 1)
+                                Rows Removed by Filter: 0
+                                Index Searches: 97
+                                Buffers: shared hit=292
+                    ->  Index Scan using authors_pkey on native.authors a  (cost=0.29..0.31 rows=1 width=11) (actual time=0.002..0.002 rows=1.00 loops=97)
+                          Output: a.id, a.first_name, a.last_name, a.birth_year, a.country, a.created_at
+                          Index Cond: (a.id = ba.author_id)
+                          Index Searches: 97
+                          Buffers: shared hit=291
+              ->  Hash  (cost=9.00..9.00 rows=500 width=20) (actual time=0.094..0.094 rows=500.00 loops=1)
+                    Output: p.name, p.id
+                    Buckets: 1024  Batches: 1  Memory Usage: 35kB
+                    Buffers: shared hit=4
+                    ->  Seq Scan on native.publishers p  (cost=0.00..9.00 rows=500 width=20) (actual time=0.005..0.041 rows=500.00 loops=1)
+                          Output: p.name, p.id
+                          Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=36
+Planning Time: 0.801 ms
+Execution Time: 84.539 ms

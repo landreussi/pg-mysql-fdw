@@ -1,0 +1,11 @@
+-> Limit: 50 row(s)  (actual time=2.66..2.67 rows=50 loops=1)
+    -> Sort: o.ordered_at DESC, o.id DESC, oi.line_no, limit input to 50 row(s) per chunk  (actual time=2.66..2.66 rows=50 loops=1)
+        -> Stream results  (cost=359 rows=366) (actual time=0.0929..2.53 rows=377 loops=1)
+            -> Nested loop inner join  (cost=359 rows=366) (actual time=0.0895..2.25 rows=377 loops=1)
+                -> Nested loop inner join  (cost=231 rows=366) (actual time=0.0866..1.61 rows=377 loops=1)
+                    -> Nested loop left join  (cost=103 rows=147) (actual time=0.0771..0.751 rows=147 loops=1)
+                        -> Index lookup on o using orders_customer_id_ordered_at_idx (customer_id='42')  (cost=51.5 rows=147) (actual time=0.0711..0.241 rows=147 loops=1)
+                        -> Single-row index lookup on s using shipments_order_id_key (order_id=o.id)  (cost=0.251 rows=1) (actual time=0.00329..0.00331 rows=0.993 loops=147)
+                    -> Index lookup on oi using order_items_order_id_line_no_key (order_id=o.id)  (cost=0.625 rows=2.49) (actual time=0.005..0.00562 rows=2.56 loops=147)
+                -> Single-row index lookup on b using PRIMARY (id=oi.book_id)  (cost=0.25 rows=1) (actual time=0.00151..0.00154 rows=1 loops=377)
+

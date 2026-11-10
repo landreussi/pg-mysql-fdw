@@ -1,0 +1,19 @@
+Limit  (cost=15.42..127.91 rows=50 width=645) (actual time=2.425..2.553 rows=50.00 loops=1)
+  Output: o.id, o.ordered_at, o.status, oi.line_no, b.title, oi.quantity, oi.unit_price, s.carrier, s.status, s.delivered_at
+  Buffers: shared hit=196
+  ->  Nested Loop Left Join  (cost=15.42..281222.50 rows=125000 width=645) (actual time=2.425..2.549 rows=50.00 loops=1)
+        Output: o.id, o.ordered_at, o.status, oi.line_no, b.title, oi.quantity, oi.unit_price, s.carrier, s.status, s.delivered_at
+        Inner Unique: true
+        Buffers: shared hit=196
+        ->  Foreign Scan  (cost=15.00..35.00 rows=125000 width=622) (actual time=2.413..2.466 rows=50.00 loops=1)
+              Output: o.id, o.ordered_at, o.status, oi.line_no, oi.quantity, oi.unit_price, b.title
+              Relations: (((bookstore.customers c) INNER JOIN (bookstore.orders o)) INNER JOIN (bookstore.order_items oi)) INNER JOIN (bookstore.books b)
+              Local server startup cost: 10
+              Remote query: SELECT r2.`id`, r2.`ordered_at`, r2.`status`, r4.`line_no`, r4.`quantity`, r4.`unit_price`, r6.`title` FROM (((`bookstore`.`customers` r1 INNER JOIN `bookstore`.`orders` r2 ON (((r1.`id` = r2.`customer_id`)))) INNER JOIN `bookstore`.`order_items` r4 ON (((r2.`id` = r4.`order_id`)))) INNER JOIN `bookstore`.`books` r6 ON (((r4.`book_id` = r6.`id`)))) WHERE ((r1.`email` = 'customer42@example.com')) ORDER BY r2.`ordered_at` IS NOT NULL, r2.`ordered_at` DESC, r4.`order_id` IS NOT NULL, r4.`order_id` DESC, r4.`line_no` IS NULL, r4.`line_no` ASC
+        ->  Index Scan using shipments_order_id_key on app.shipments s  (cost=0.42..2.25 rows=1 width=27) (actual time=0.001..0.001 rows=0.92 loops=50)
+              Output: s.id, s.order_id, s.carrier, s.tracking_number, s.status, s.shipped_at, s.delivered_at
+              Index Cond: (s.order_id = o.id)
+              Index Searches: 50
+              Buffers: shared hit=196
+Planning Time: 0.504 ms
+Execution Time: 2.814 ms

@@ -1,0 +1,655 @@
+{
+  "info": {
+    "postgresql": "18.6",
+    "mysql_fdw": "2.9.3",
+    "mysql": "8.4.11",
+    "scale": "1",
+    "cpu_count": 4,
+    "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.44",
+    "started": "2026-11-10 20:09:11"
+  },
+  "queries": {
+    "01_book_page": {
+      "title": "Book page: one book with its publisher and authors (legacy) plus rating summary and stock (migrated)",
+      "same_result": true,
+      "scenarios": {
+        "mysql_monolith": {
+          "timings_ms": [
+            0.48556500001950553,
+            0.47576700001172867,
+            0.4303019999838398,
+            0.4516829999943184,
+            0.4382870000085859
+          ],
+          "median_ms": 0.4516829999943184,
+          "error": null,
+          "timed_out": false,
+          "row_count": 1,
+          "fdw_rows": null,
+          "fdw_executions": null
+        },
+        "pg_fdw": {
+          "timings_ms": [
+            1.2816600000178369,
+            1.117855000018153,
+            1.1078260000090268,
+            1.090512999951443,
+            1.2617239999599406
+          ],
+          "median_ms": 1.117855000018153,
+          "error": null,
+          "timed_out": false,
+          "row_count": 1,
+          "fdw_rows": 1,
+          "fdw_executions": 1
+        },
+        "pg_fdw_fetch": {
+          "timings_ms": [
+            1.398711000035746,
+            1.2559619999592542,
+            1.222159000008105,
+            1.223320999997668,
+            1.4061420000075486
+          ],
+          "median_ms": 1.2559619999592542,
+          "error": null,
+          "timed_out": false,
+          "row_count": 1,
+          "fdw_rows": 1,
+          "fdw_executions": 1
+        },
+        "pg_fdw_estimate": {
+          "timings_ms": [
+            1.80877299999338,
+            1.6570599999568003,
+            1.6677899999990586,
+            1.65761100004147,
+            1.7856599999959144
+          ],
+          "median_ms": 1.6677899999990586,
+          "error": null,
+          "timed_out": false,
+          "row_count": 1,
+          "fdw_rows": 1,
+          "fdw_executions": 1
+        },
+        "pg_native": {
+          "timings_ms": [
+            0.6486089999953037,
+            0.5554050000000643,
+            0.5203000000051361,
+            0.5644020000090677,
+            0.6284520000008342
+          ],
+          "median_ms": 0.5644020000090677,
+          "error": null,
+          "timed_out": false,
+          "row_count": 1,
+          "fdw_rows": null,
+          "fdw_executions": null
+        }
+      }
+    },
+    "02_order_history": {
+      "title": "Order history page: a customer's latest order lines (legacy) with shipment tracking (migrated)",
+      "same_result": true,
+      "scenarios": {
+        "mysql_monolith": {
+          "timings_ms": [
+            4.6220890000086,
+            4.196455999988302,
+            3.980041999966488,
+            3.766773999984707,
+            4.424850000020797
+          ],
+          "median_ms": 4.196455999988302,
+          "error": null,
+          "timed_out": false,
+          "row_count": 50,
+          "fdw_rows": null,
+          "fdw_executions": null
+        },
+        "pg_fdw": {
+          "timings_ms": [
+            4.243124999959491,
+            4.02058700001362,
+            3.7060710000105246,
+            3.6509280000132094,
+            3.666516999999203
+          ],
+          "median_ms": 3.7060710000105246,
+          "error": null,
+          "timed_out": false,
+          "row_count": 50,
+          "fdw_rows": 50,
+          "fdw_executions": 1
+        },
+        "pg_fdw_fetch": {
+          "timings_ms": [
+            3.7679460000390463,
+            3.6745720000226356,
+            3.5631140000305095,
+            3.5505919999536673,
+            3.6952099999894017
+          ],
+          "median_ms": 3.6745720000226356,
+          "error": null,
+          "timed_out": false,
+          "row_count": 50,
+          "fdw_rows": 50,
+          "fdw_executions": 1
+        },
+        "pg_fdw_estimate": {
+          "timings_ms": [
+            4.3505030000119405,
+            4.192277000015565,
+            4.252441999994971,
+            4.030946999989737,
+            4.117188000009264
+          ],
+          "median_ms": 4.192277000015565,
+          "error": null,
+          "timed_out": false,
+          "row_count": 50,
+          "fdw_rows": 50,
+          "fdw_executions": 1
+        },
+        "pg_native": {
+          "timings_ms": [
+            3.363311999976304,
+            2.9390199999852484,
+            2.8626179999946544,
+            2.7648159999671407,
+            2.775816000053055
+          ],
+          "median_ms": 2.8626179999946544,
+          "error": null,
+          "timed_out": false,
+          "row_count": 50,
+          "fdw_rows": null,
+          "fdw_executions": null
+        }
+      }
+    },
+    "03_top_rated_scifi": {
+      "title": "Top rated science fiction since 2025: aggregate migrated reviews, then join the legacy catalogue",
+      "same_result": true,
+      "scenarios": {
+        "mysql_monolith": {
+          "timings_ms": [
+            812.3384920000376,
+            808.139395000012,
+            794.6694689999845,
+            801.5256809999869,
+            808.8677079999798
+          ],
+          "median_ms": 808.139395000012,
+          "error": null,
+          "timed_out": false,
+          "row_count": 20,
+          "fdw_rows": null,
+          "fdw_executions": null
+        },
+        "pg_fdw": {
+          "timings_ms": [
+            365.59008900002254,
+            367.20032699997773,
+            370.5340320000232,
+            365.23009199999024,
+            373.1319860000326
+          ],
+          "median_ms": 367.20032699997773,
+          "error": null,
+          "timed_out": false,
+          "row_count": 20,
+          "fdw_rows": 107005,
+          "fdw_executions": 2
+        },
+        "pg_fdw_fetch": {
+          "timings_ms": [
+            318.93123499997955,
+            327.445369999964,
+            315.70442599996795,
+            319.0997789999983,
+            324.05392399999755
+          ],
+          "median_ms": 319.0997789999983,
+          "error": null,
+          "timed_out": false,
+          "row_count": 20,
+          "fdw_rows": 107005,
+          "fdw_executions": 2
+        },
+        "pg_fdw_estimate": {
+          "timings_ms": [
+            277.95647300001747,
+            289.75885699998116,
+            281.1067419999631,
+            274.08179799999743,
+            279.6223349999991
+          ],
+          "median_ms": 279.6223349999991,
+          "error": null,
+          "timed_out": false,
+          "row_count": 20,
+          "fdw_rows": 7300,
+          "fdw_executions": 2
+        },
+        "pg_native": {
+          "timings_ms": [
+            78.45629399997733,
+            75.35592299996097,
+            72.43764600002578,
+            72.36860799997658,
+            72.47581699999728
+          ],
+          "median_ms": 72.47581699999728,
+          "error": null,
+          "timed_out": false,
+          "row_count": 20,
+          "fdw_rows": null,
+          "fdw_executions": null
+        }
+      }
+    },
+    "04_bestselling_authors": {
+      "title": "Bestselling authors of Q3 2026: legacy tables only",
+      "same_result": true,
+      "scenarios": {
+        "mysql_monolith": {
+          "timings_ms": [
+            464.6655490000171,
+            470.78313299999763,
+            459.69728199997917,
+            464.20710199998894,
+            462.12754399999767
+          ],
+          "median_ms": 464.20710199998894,
+          "error": null,
+          "timed_out": false,
+          "row_count": 10,
+          "fdw_rows": null,
+          "fdw_executions": null
+        },
+        "pg_fdw": {
+          "timings_ms": [
+            491.9683389999818,
+            479.59540800002287,
+            483.84192500003564,
+            475.19384299999956,
+            480.17924699996684
+          ],
+          "median_ms": 480.17924699996684,
+          "error": null,
+          "timed_out": false,
+          "row_count": 10,
+          "fdw_rows": 10,
+          "fdw_executions": 1
+        },
+        "pg_fdw_fetch": {
+          "timings_ms": [
+            480.32940999996754,
+            473.4748550000063,
+            480.7221599999707,
+            475.99228000001403,
+            480.70099000000255
+          ],
+          "median_ms": 480.32940999996754,
+          "error": null,
+          "timed_out": false,
+          "row_count": 10,
+          "fdw_rows": 10,
+          "fdw_executions": 1
+        },
+        "pg_fdw_estimate": {
+          "timings_ms": [
+            478.9497239999605,
+            479.31954399996357,
+            477.5989759999675,
+            482.08029200003466,
+            481.43911099998604
+          ],
+          "median_ms": 479.31954399996357,
+          "error": null,
+          "timed_out": false,
+          "row_count": 10,
+          "fdw_rows": 10,
+          "fdw_executions": 1
+        },
+        "pg_native": {
+          "timings_ms": [
+            83.58507200000531,
+            83.81667200001175,
+            85.42445299997325,
+            84.67725299999529,
+            85.86841800001821
+          ],
+          "median_ms": 84.67725299999529,
+          "error": null,
+          "timed_out": false,
+          "row_count": 10,
+          "fdw_rows": null,
+          "fdw_executions": null
+        }
+      }
+    },
+    "05_restock_report": {
+      "title": "Restock report: low-stock NYC inventory (migrated) with title, publisher and recent sales (legacy)",
+      "same_result": true,
+      "scenarios": {
+        "mysql_monolith": {
+          "timings_ms": [
+            344.0090770000097,
+            338.6307569999758,
+            338.885093999977,
+            339.17065200000707,
+            335.0520920000122
+          ],
+          "median_ms": 338.885093999977,
+          "error": null,
+          "timed_out": false,
+          "row_count": 25,
+          "fdw_rows": null,
+          "fdw_executions": null
+        },
+        "pg_fdw": {
+          "timings_ms": [
+            546.4411869999708,
+            555.3998819999606,
+            515.5774979999705,
+            508.64409100000785,
+            511.8130480000218
+          ],
+          "median_ms": 515.5774979999705,
+          "error": null,
+          "timed_out": false,
+          "row_count": 25,
+          "fdw_rows": 136710,
+          "fdw_executions": 2
+        },
+        "pg_fdw_fetch": {
+          "timings_ms": [
+            442.09637599999496,
+            446.01754400002847,
+            442.1948060000318,
+            444.3484010000134,
+            444.755119999968
+          ],
+          "median_ms": 444.3484010000134,
+          "error": null,
+          "timed_out": false,
+          "row_count": 25,
+          "fdw_rows": 136710,
+          "fdw_executions": 2
+        },
+        "pg_fdw_estimate": {
+          "timings_ms": [
+            509.5356630000083,
+            512.8347730000087,
+            508.78713699995615,
+            513.507790999995,
+            512.5884820000124
+          ],
+          "median_ms": 512.5884820000124,
+          "error": null,
+          "timed_out": false,
+          "row_count": 25,
+          "fdw_rows": 136710,
+          "fdw_executions": 2
+        },
+        "pg_native": {
+          "timings_ms": [
+            114.81316799995511,
+            113.80588999998054,
+            114.90301500003852,
+            113.41545199996972,
+            113.24733800000786
+          ],
+          "median_ms": 113.80588999998054,
+          "error": null,
+          "timed_out": false,
+          "row_count": 25,
+          "fdw_rows": null,
+          "fdw_executions": null
+        }
+      }
+    },
+    "06_revenue_by_publisher": {
+      "title": "Revenue per publisher for orders delivered in September 2026: filter only on migrated shipments",
+      "same_result": true,
+      "scenarios": {
+        "mysql_monolith": {
+          "timings_ms": [
+            143.7948229999506,
+            143.9297350000288,
+            146.55641300004163,
+            142.71650300003103,
+            142.5276709999821
+          ],
+          "median_ms": 143.7948229999506,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": null,
+          "fdw_executions": null
+        },
+        "pg_fdw": {
+          "timings_ms": [
+            3486.5040839999892,
+            3480.031143999952,
+            3493.121395000003,
+            3466.074056000025,
+            3454.259417000003
+          ],
+          "median_ms": 3480.031143999952,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": 1349856,
+          "fdw_executions": 2
+        },
+        "pg_fdw_fetch": {
+          "timings_ms": [
+            2811.8612879999887,
+            2793.0927259999976,
+            2794.880658000011,
+            2827.6789989999997,
+            2803.6261639999793
+          ],
+          "median_ms": 2803.6261639999793,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": 1349856,
+          "fdw_executions": 2
+        },
+        "pg_fdw_estimate": {
+          "timings_ms": [
+            4926.0835599999955,
+            4977.324903999999,
+            4960.637161000022,
+            4994.7140290000225,
+            4948.725594999985
+          ],
+          "median_ms": 4960.637161000022,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": 1716415,
+          "fdw_executions": 3
+        },
+        "pg_native": {
+          "timings_ms": [
+            40.97321599999759,
+            47.08032999997158,
+            40.51961999999776,
+            41.09096600001294,
+            40.608315000042694
+          ],
+          "median_ms": 40.97321599999759,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": null,
+          "fdw_executions": null
+        }
+      }
+    },
+    "07_revenue_by_publisher_hinted": {
+      "title": "Same as 06, plus a redundant filter on legacy orders that MySQL can use",
+      "same_result": true,
+      "scenarios": {
+        "mysql_monolith": {
+          "timings_ms": [
+            141.33645900000147,
+            141.15184500002442,
+            140.58583600001384,
+            141.1894519999919,
+            141.58273600003213
+          ],
+          "median_ms": 141.1894519999919,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": null,
+          "fdw_executions": null
+        },
+        "pg_fdw": {
+          "timings_ms": [
+            396.151193000037,
+            398.8139279999814,
+            399.2421000000377,
+            400.97394200000736,
+            409.2223960000183
+          ],
+          "median_ms": 399.2421000000377,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": 156336,
+          "fdw_executions": 2
+        },
+        "pg_fdw_fetch": {
+          "timings_ms": [
+            316.01269500004037,
+            310.94112199997426,
+            317.35981099996025,
+            318.2176659999527,
+            325.97240399996963
+          ],
+          "median_ms": 317.35981099996025,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": 156336,
+          "fdw_executions": 2
+        },
+        "pg_fdw_estimate": {
+          "timings_ms": [
+            4714.85377800002,
+            4675.049866999984,
+            4657.136665999986,
+            4614.890699999933,
+            4647.654180000018
+          ],
+          "median_ms": 4657.136665999986,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": 1238928,
+          "fdw_executions": 3
+        },
+        "pg_native": {
+          "timings_ms": [
+            68.56136999999762,
+            67.68269300005159,
+            67.1161079999365,
+            65.44105700004366,
+            64.84384499992757
+          ],
+          "median_ms": 67.1161079999365,
+          "error": null,
+          "timed_out": false,
+          "row_count": 15,
+          "fdw_rows": null,
+          "fdw_executions": null
+        }
+      }
+    },
+    "08_verified_reviews": {
+      "title": "Verified-buyer share of October 2026 reviews per genre: correlated EXISTS from migrated into legacy",
+      "same_result": true,
+      "scenarios": {
+        "mysql_monolith": {
+          "timings_ms": [
+            959.2202479999514,
+            931.4872699999341,
+            929.3275179999227,
+            925.2874420000126,
+            949.5281230000501
+          ],
+          "median_ms": 931.4872699999341,
+          "error": null,
+          "timed_out": false,
+          "row_count": 18,
+          "fdw_rows": null,
+          "fdw_executions": null
+        },
+        "pg_fdw": {
+          "timings_ms": [
+            4311.722519,
+            4316.489858000068,
+            4408.003583999971,
+            4451.765202000047,
+            4471.046635999983
+          ],
+          "median_ms": 4408.003583999971,
+          "error": null,
+          "timed_out": false,
+          "row_count": 18,
+          "fdw_rows": 1349862,
+          "fdw_executions": 2
+        },
+        "pg_fdw_fetch": {
+          "timings_ms": [
+            3761.240402999988,
+            3688.509108000062,
+            3734.6086779999723,
+            3818.7089079999623,
+            3807.169540000018
+          ],
+          "median_ms": 3761.240402999988,
+          "error": null,
+          "timed_out": false,
+          "row_count": 18,
+          "fdw_rows": 1349862,
+          "fdw_executions": 2
+        },
+        "pg_fdw_estimate": {
+          "timings_ms": [],
+          "median_ms": null,
+          "error": "canceling statement due to statement timeout",
+          "timed_out": true,
+          "row_count": null,
+          "fdw_rows": null,
+          "fdw_executions": null
+        },
+        "pg_native": {
+          "timings_ms": [
+            1007.0532690000391,
+            981.2076539999453,
+            976.1149119999573,
+            990.9624160000021,
+            979.0727449999395
+          ],
+          "median_ms": 981.2076539999453,
+          "error": null,
+          "timed_out": false,
+          "row_count": 18,
+          "fdw_rows": null,
+          "fdw_executions": null
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,88 @@
+Limit  (cost=28254.93..28254.95 rows=10 width=25) (actual time=104.342..106.079 rows=10.00 loops=1)
+  Output: a.id, a.first_name, a.last_name, (sum(oi.quantity))
+  Buffers: shared hit=129605
+  ->  Sort  (cost=28254.93..28304.93 rows=20000 width=25) (actual time=104.341..106.077 rows=10.00 loops=1)
+        Output: a.id, a.first_name, a.last_name, (sum(oi.quantity))
+        Sort Key: (sum(oi.quantity)) DESC, a.id
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=129605
+        ->  Finalize HashAggregate  (cost=27622.74..27822.74 rows=20000 width=25) (actual time=100.212..103.873 rows=17338.00 loops=1)
+              Output: a.id, a.first_name, a.last_name, sum(oi.quantity)
+              Group Key: a.id
+              Batches: 1  Memory Usage: 1561kB
+              Buffers: shared hit=129605
+              ->  Gather  (cost=23852.74..27452.74 rows=34000 width=25) (actual time=89.641..95.334 rows=28549.00 loops=1)
+                    Output: a.id, a.first_name, a.last_name, (PARTIAL sum(oi.quantity))
+                    Workers Planned: 1
+                    Workers Launched: 1
+                    Buffers: shared hit=129605
+                    ->  Partial HashAggregate  (cost=22852.74..23052.74 rows=20000 width=25) (actual time=87.445..89.248 rows=14274.50 loops=2)
+                          Output: a.id, a.first_name, a.last_name, PARTIAL sum(oi.quantity)
+                          Group Key: a.id
+                          Batches: 1  Memory Usage: 1561kB
+                          Buffers: shared hit=129605
+                          Worker 0:  actual time=85.477..87.151 rows=14181.00 loops=1
+                            Batches: 1  Memory Usage: 1561kB
+                            Buffers: shared hit=63718
+                          ->  Parallel Hash Join  (cost=3009.88..22581.88 rows=54171 width=19) (actual time=36.156..78.582 rows=41095.00 loops=2)
+                                Output: a.id, a.first_name, a.last_name, oi.quantity
+                                Hash Cond: (oi.book_id = ba.book_id)
+                                Buffers: shared hit=129605
+                                Worker 0:  actual time=34.406..76.661 rows=40425.00 loops=1
+                                  Buffers: shared hit=63718
+                                ->  Nested Loop  (cost=0.85..19209.30 rows=36755 width=6) (actual time=0.077..31.363 rows=31925.50 loops=2)
+                                      Output: oi.quantity, oi.book_id
+                                      Buffers: shared hit=128918
+                                      Worker 0:  actual time=0.089..31.388 rows=31377.00 loops=1
+                                        Buffers: shared hit=63372
+                                      ->  Parallel Index Scan using orders_ordered_at_idx on native.orders o  (cost=0.42..3543.47 rows=14704 width=4) (actual time=0.051..6.892 rows=12770.00 loops=2)
+                                            Output: o.id, o.customer_id, o.status, o.ordered_at, o.total_amount, o.shipping_country
+                                            Index Cond: ((o.ordered_at >= '2026-07-01 00:00:00'::timestamp without time zone) AND (o.ordered_at < '2026-10-01 00:00:00'::timestamp without time zone))
+                                            Filter: ((o.status)::text <> 'cancelled'::text)
+                                            Rows Removed by Filter: 387
+                                            Index Searches: 1
+                                            Buffers: shared hit=26380
+                                            Worker 0:  actual time=0.053..7.157 rows=12554.00 loops=1
+                                              Buffers: shared hit=12972
+                                      ->  Index Scan using order_items_order_id_line_no_key on native.order_items oi  (cost=0.43..1.04 rows=3 width=10) (actual time=0.001..0.001 rows=2.50 loops=25540)
+                                            Output: oi.id, oi.order_id, oi.line_no, oi.book_id, oi.quantity, oi.unit_price
+                                            Index Cond: (oi.order_id = o.id)
+                                            Index Searches: 25540
+                                            Buffers: shared hit=102538
+                                            Worker 0:  actual time=0.001..0.002 rows=2.50 loops=12554
+                                              Buffers: shared hit=50400
+                                ->  Parallel Hash  (cost=2331.96..2331.96 rows=54166 width=21) (actual time=35.305..35.307 rows=64999.00 loops=2)
+                                      Output: ba.book_id, a.id, a.first_name, a.last_name
+                                      Buckets: 131072  Batches: 1  Memory Usage: 8256kB
+                                      Buffers: shared hit=687
+                                      Worker 0:  actual time=34.298..34.299 rows=62285.00 loops=1
+                                        Buffers: shared hit=346
+                                      ->  Hash Join  (cost=604.29..2331.96 rows=54166 width=21) (actual time=4.671..22.572 rows=64999.00 loops=2)
+                                            Output: ba.book_id, a.id, a.first_name, a.last_name
+                                            Inner Unique: true
+                                            Hash Cond: (ba.author_id = a.id)
+                                            Buffers: shared hit=687
+                                            Worker 0:  actual time=4.773..21.903 rows=62285.00 loops=1
+                                              Buffers: shared hit=346
+                                            ->  Parallel Index Only Scan using book_authors_pkey on native.book_authors ba  (cost=0.29..1585.74 rows=54166 width=8) (actual time=0.019..5.254 rows=64999.00 loops=2)
+                                                  Output: ba.book_id, ba.author_id
+                                                  Heap Fetches: 0
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=359
+                                                  Worker 0:  actual time=0.028..5.030 rows=62285.00 loops=1
+                                                    Buffers: shared hit=172
+                                            ->  Hash  (cost=354.00..354.00 rows=20000 width=17) (actual time=4.588..4.589 rows=20000.00 loops=2)
+                                                  Output: a.id, a.first_name, a.last_name
+                                                  Buckets: 32768  Batches: 1  Memory Usage: 1224kB
+                                                  Buffers: shared hit=328
+                                                  Worker 0:  actual time=4.632..4.633 rows=20000.00 loops=1
+                                                    Buffers: shared hit=174
+                                                  ->  Seq Scan on native.authors a  (cost=0.00..354.00 rows=20000 width=17) (actual time=0.030..1.663 rows=20000.00 loops=2)
+                                                        Output: a.id, a.first_name, a.last_name
+                                                        Buffers: shared hit=328
+                                                        Worker 0:  actual time=0.054..1.720 rows=20000.00 loops=1
+                                                          Buffers: shared hit=174
+Planning:
+  Buffers: shared hit=46
+Planning Time: 0.551 ms
+Execution Time: 106.168 ms
